@@ -1,0 +1,696 @@
+{
+  "name": "LinkedIn-Content-Creator-V2",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        16
+      ],
+      "id": "450df82a-81ce-4164-99ac-6ce26d279a53",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1_e_AcLY9OrkPsY6izVvXT1BT2fjURElAFWoD7MDNhF8",
+          "mode": "list",
+          "cachedResultName": "LinkedIn Posts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_e_AcLY9OrkPsY6izVvXT1BT2fjURElAFWoD7MDNhF8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 328145280,
+          "mode": "list",
+          "cachedResultName": "V2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_e_AcLY9OrkPsY6izVvXT1BT2fjURElAFWoD7MDNhF8/edit#gid=328145280"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status",
+              "lookupValue": "To Do"
+            }
+          ]
+        },
+        "options": {
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        256,
+        16
+      ],
+      "id": "1a502d91-b4cb-4d96-92b0-e0932103d35f",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "czYQrSpaMKPj0dtH",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "35b359f6-b5cf-4cd2-9414-7780eb374dab",
+              "name": "linkedin_post",
+              "value": "={{ $json.output['post title'] }}\n\n{{ $json.output['post content'] }}\n{{ $json.output.Hashtags }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1136,
+        16
+      ],
+      "id": "ba0c6234-d621-4685-bcae-891a1c6185fc",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/rest/posts",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "linkedInOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Restli-Protocol-Version",
+              "value": "2.0.0"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "LinkedIn-Version",
+              "value": "202605"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ \nJSON.stringify({\n  \"author\": \"urn:li:person:\" + $json.sub,\n  \"commentary\": $('Edit Fields').item.json.linkedin_post,\n  \"visibility\": \"PUBLIC\",\n  \"distribution\": {\n    \"feedDistribution\": \"MAIN_FEED\",\n    \"targetEntities\": [],\n    \"thirdPartyDistributionChannels\": []\n  },\n  \"lifecycleState\": \"PUBLISHED\"\n}) \n}}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1584,
+        16
+      ],
+      "id": "ec4e6896-3b78-47c3-ad29-d3c835447b9f",
+      "name": "Post Content on LinkedIn",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "BKdDzBtdHHqXlkO5",
+          "name": "LinkedIn-Developers-API-Account"
+        },
+        "linkedInOAuth2Api": {
+          "id": "o9c0yGvCopFYElHU",
+          "name": "LinkedIn account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.linkedin.com/v2/userinfo",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "linkedInOAuth2Api",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1360,
+        16
+      ],
+      "id": "057146e4-1326-419a-b9e7-a0f396bdb1cb",
+      "name": "LinkedIn Person-ID Extraction",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "BKdDzBtdHHqXlkO5",
+          "name": "LinkedIn-Developers-API-Account"
+        },
+        "linkedInOAuth2Api": {
+          "id": "o9c0yGvCopFYElHU",
+          "name": "LinkedIn account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1_e_AcLY9OrkPsY6izVvXT1BT2fjURElAFWoD7MDNhF8",
+          "mode": "list",
+          "cachedResultName": "LinkedIn Posts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_e_AcLY9OrkPsY6izVvXT1BT2fjURElAFWoD7MDNhF8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 328145280,
+          "mode": "list",
+          "cachedResultName": "V2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_e_AcLY9OrkPsY6izVvXT1BT2fjURElAFWoD7MDNhF8/edit#gid=328145280"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "Completed",
+            "Content": "={{ $('Edit Fields').item.json.linkedin_post }}",
+            "Title": "={{ $('Content Topic Generator').item.json.output[0].Title }}"
+          },
+          "matchingColumns": [
+            "Title"
+          ],
+          "schema": [
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Rationale",
+              "displayName": "Rationale",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Hook",
+              "displayName": "Hook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Content",
+              "displayName": "Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1824,
+        16
+      ],
+      "id": "9361b610-5470-4a82-8306-cd340421bd91",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "czYQrSpaMKPj0dtH",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "You are an elite B2B Growth Architect and seasoned AI Automation Specialist with deep, hands-on expertise in Agentic AI, n8n, OpenClaw, and cloud-native systems. Your sole objective is to generate hyper-engaging, high-value LinkedIn content topics designed to attract premium consulting and implementation clients (CTOs, VPs of Engineering, Tech Founders, and CXOs).\n\nCRITICAL: Every topic must not only highlight a technical leadership pain point but also position \"Agentic AI & n8n Automations\" as the ultimate strategic solution, ending with an organic hook that drives the reader to connect with me to acquire my services. Rotate focus areas and angles to keep content fresh. Do not use em-dashes (—) or en-dashes (–) to connect clauses. Use standard punctuation like periods, commas, semicolons, or colons instead. Vary your sentence structures naturally so they do not rely on dashes for emphasis.\n\n🔍 Strategic Focus Pillars:\n1. n8n vs. Custom Code: Highlighting why self-hosted n8n reduces engineering backlogs and cuts development cycles by 70%.\n2. Agentic ROI & Cost Control: Tackling LLM API burn, token optimizations, and building reliable agentic fail-safes without blowing budgets.\n3. Legacy System Modernization: How to overlay n8n and Claude agents on top of fragile, older cloud infrastructure without refactoring everything.\n4. Scale & Governance: Solving the nightmare of multi-agent orchestration, state management, and enterprise-grade error handling in self-hosted environments.\n\n🎯 Engagement & Lead-Gen Requirements:\n- Format the title as an analytical, slightly controversial, or highly urgent question that a tech leader secretly worries about.\n- Mix tactical, hands-on architectural insights with high-level business ROI.\n- Ensure the tone is authoritative, peer-to-peer, deeply technical, yet explicitly commercial (focusing on saved engineering hours, dollars, or stress).\n\n✅ Output Format per Topic:\nFor each topic, you must output exactly these four lines:\n\n- Title (1 Line): A compelling, high-intent question targeting an engineering leader's pain point.\n- The Pain Point (1 Line): The specific, costly technical bottleneck the leader is currently suffering from.\n- The n8n/Agentic Solution (1 Line): The precise architectural layout or automation strategy I deploy to solve it.\n- The Inbound Conversion Hook (1 Line): A LinkedIn-ready call-to-action or hook that incentivizes them to comment or DM me for my frameworks, templates, or consulting services.\n\n💡 Style Guide:\nEliminate generic AI buzzwords (\"revolutionize\", \"delve\", \"game-changer\"). Speak in production-level engineering terms (e.g., token limits, webhooks, self-hosted container scaling, error-retries, state-machines). Every topic must make the reader think: \"This person understands my exact architecture and can save my team hundreds of hours.\"\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "id": "1abb7b92-0d6e-45d4-a524-c19607e5d287",
+      "name": "Content Topic Generator",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        -240,
+        16
+      ],
+      "typeVersion": 1.8
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "[{\n \"Title\": \"AI as Your First Content Hire: Why Founders Shouldn't Wait to Outsource Creation\",\n            \"Rationale\": \"Most solopreneurs delay content scaling because they think hiring a ghostwriter is the next step — but AI can handle 80% with proper systems. This shifts content from a creative bottleneck to a scalable growth lever.\",\n            \"Hook\": \"Ghostwriters are outdated. Train GPT once, and it ships LinkedIn gold in your voice daily. Welcome to hands-free thought leadership.\"\n          }]"
+      },
+      "id": "8f368bd9-8e43-4129-85b8-799a630caf48",
+      "name": "Structured Output Parser6",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "position": [
+        -96,
+        208
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "model": "qwen3-coder:480b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        208
+      ],
+      "id": "da3393fc-e175-4c33-b358-cccacb039f00",
+      "name": "Ollama Chat Model1",
+      "credentials": {
+        "ollamaApi": {
+          "id": "XmTTkUhhd9okrx05",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1_e_AcLY9OrkPsY6izVvXT1BT2fjURElAFWoD7MDNhF8",
+          "mode": "list",
+          "cachedResultName": "LinkedIn Posts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_e_AcLY9OrkPsY6izVvXT1BT2fjURElAFWoD7MDNhF8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 328145280,
+          "mode": "list",
+          "cachedResultName": "V2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_e_AcLY9OrkPsY6izVvXT1BT2fjURElAFWoD7MDNhF8/edit#gid=328145280"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Title": "={{ $json.output[0].Title }}",
+            "Rationale": "={{ $json.output[0].Rationale }}",
+            "Hook": "={{ $json.output[0].Hook }}",
+            "Status": "To Do"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Rationale",
+              "displayName": "Rationale",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Hook",
+              "displayName": "Hook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Content",
+              "displayName": "Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        80,
+        16
+      ],
+      "id": "0e2a3670-776f-4375-9489-04c9b616a313",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "czYQrSpaMKPj0dtH",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"post title\": \"Exciting New Feature Launch 🚀\",\n  \"post content\": \"After months of collaboration, testing, and fine-tuning, we're thrilled to introduce our latest product feature: Smart Insights. It helps users uncover meaningful patterns in their data with just a few clicks. This wouldn't have been possible without our incredible team and supportive community. We're excited for what's next — and we'd love your feedback!\"\n}"
+      },
+      "id": "63580698-9295-41bc-af2d-3cd0ed9ee8a2",
+      "name": "Structured Output Parser7",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "position": [
+        608,
+        192
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an elite, highly persuasive B2B Technical Copywriter and Growth Marketer specializing in Agentic AI and self-hosted n8n cloud architectures. Your task is to write a high-converting, curiosity-driven LinkedIn post based on the incoming Topic, Pain Point, Solution, and Inbound Hook. \n\nYour target audience consists of busy technical decision-makers (CTOs, VPs of Engineering, Tech Founders, and CXOs). Your goal is to showcase deep engineering authority, prove how n8n/Agentic AI solves their massive engineering or cost bottlenecks, and position the author as the premium choice for outsourcing these automations.\n\nInput Data Structure:\nTitle/Idea: {{ $json.Title }}\nRationale: {{ $json.Rationale }}\nHook: {{ $json.Hook }}\n\n❌ FORBIDDEN PHRASES - NEVER USE:\n\"Let's be honest\", \"Delve into\", \"At its core\", \"It's important to note\", \"In today's world\", \"A testament to\", \"Navigating the landscape\", \"Paradigm shift\", \"Aims to explore\", \"It's not this, it's that\", \"Conquer\", \"game-changer\", \"revolutionize\".Do not use em-dashes (—) or en-dashes (–) to connect clauses. Use standard punctuation like periods, commas, semicolons, or colons instead. Vary your sentence structures naturally so they do not rely on dashes for emphasis.\n\n📋 Strict Copywriting & Lead-Gen Rules:\n1. Start Fast: Open the first line directly with the high-intent question or bold statement provided in the Title input. Do not waste space on preambles and do not repeat that same question or statement into post content.\n2. Structure for Skimming: Use short paragraphs (1-2 lines max). Use punchy, broken syntax that reads naturally on a mobile screen.\n3. Establish Technical Credibility: Use precise production terms (e.g., token consumption, container orchestration, webhook latency, multi-agent states, self-hosted error retries). Never sound like a generic AI hype-man.\n4. Pitch the Value of n8n: Frame self-hosted n8n not just as a \"tool,\" but as a strategic asset that frees up their high-paid software engineers, bypasses custom code backlogs, and controls cloud infrastructure budgets.\n5. High-Intent Lead Gen CTA: The post must strictly end with the provided Hook. It must give the reader an irresistible reason to comment or slide into your DMs to get a template, framework, or consulting discovery call.\n6. Formatting Constraints: Use 1-2 functional emojis maximum. Keep the entire post under 230 words to maximize readability. Add exactly 3-5 hyper-targeted hashtags at the absolute end.\n\nExecute the writing task now based on the input data, ensuring the tone feels like an authoritative peer who builds real systems, not an AI writer.\n\n\n",
+        "hasOutputParser": true
+      },
+      "id": "a8be4b2b-5a69-431c-bba3-4a9972067b92",
+      "name": "Content Creator",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "position": [
+        464,
+        16
+      ],
+      "typeVersion": 1.6
+    },
+    {
+      "parameters": {
+        "model": "qwen3-coder:480b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        464,
+        192
+      ],
+      "id": "5e127f94-90b6-4176-93cc-bc6de71d03f4",
+      "name": "Ollama Chat Model2",
+      "credentials": {
+        "ollamaApi": {
+          "id": "XmTTkUhhd9okrx05",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"post title\": \"Exciting New Feature Launch 🚀\",\n  \"post content\": \"After months of collaboration, testing, and fine-tuning, we're thrilled to introduce our latest product feature: Smart Insights. It helps users uncover meaningful patterns in their data with just a few clicks. This wouldn't have been possible without our incredible team and supportive community. We're excited for what's next — and we'd love your feedback!\",\n\n\"Hashtags\":[\"#AI\",\"#Automation\"]\n}"
+      },
+      "id": "a8fa3c75-0ad3-413d-94d9-ef802a20847e",
+      "name": "Structured Output Parser3",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "position": [
+        944,
+        208
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a world-class LinkedIn Growth and B2B SEO Strategist representing. Your job is to analyze the generated post and build a hyper-targeted metadata engine that positions our content directly in the feeds of enterprise technical buyers looking for automation services.\n\nOur Context:\n- Core Specialty: Agentic AI, self-hosted n8n workflows, Custom AI App Development, AI Consultation, and Cloud-Native Automations.\n- True Target Audience: CTOs, VPs of Engineering, Heads of Infrastructure, Tech Founders, and CXOs looking to outsource workflow engineering.\n- Ultimate Goal: Drive premium inbound leads, profile clicks, and corporate service inquiries.\n\nYour Task:\nAnalyze the incoming post variables and generate an exact list of strategic hashtags divided into 3 mandatory categories.\n\nIncoming Post Content to Analyze:\nTitle: {{ $json.output['post title'] }}\nContent: {{ $json.output['post content'] }}\nin output return exact values incoming of Title and Content variables.\n\n📋 Specific Category Mapping Rules:\n\n1. Broad Industry (Strictly 2 tags): High-volume, platform-wide reach anchors.\n   - Allowed options: #AI #Automation #CloudComputing #SoftwareEngineering\n\n2. Niche Topic (Strictly 3 tags): Hyper-specific tags linking the post to our mechanical execution stack.\n   - Allowed options: #n8n #AgenticAI #LLMOps #WorkflowAutomation #DevOps #CloudArchitecture\n\n3. Target Audience (Strictly 3 tags): Tags that our high-budget, enterprise decision-makers actively follow or follow internally.\n   - Allowed options: #CTO #EngineeringLeadership #TechFounders #VPEngineering #CXO\n\nCRITICAL FORMATTING: Output only the final grouped hashtags only into the \"Hashtags\" array after \"Post Title\" and \"Post Content\". Do not include introductory text, explanations, or conversational filler. Keep them on separate lines by category.\n\n✅ Output Format for \"Hashtags\" array only:\n#BroadTag1 #BroadTag2\n#NicheTag1 #NicheTag2 #NicheTag3\n#AudienceTag1 #AudienceTag2 #AudienceTag3\n\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "id": "6e6b12aa-b246-473f-a06c-366401b1e8a9",
+      "name": "Hashtag Generator / SEO",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        800,
+        16
+      ],
+      "typeVersion": 1.8
+    },
+    {
+      "parameters": {
+        "model": "minimax-m3",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        800,
+        208
+      ],
+      "id": "15686253-07b2-484b-8a31-7f1d38caeb54",
+      "name": "Ollama Chat Model3",
+      "credentials": {
+        "ollamaApi": {
+          "id": "XmTTkUhhd9okrx05",
+          "name": "Ollama account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Content Topic Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Content Creator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn Person-ID Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn Person-ID Extraction": {
+      "main": [
+        [
+          {
+            "node": "Post Content on LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Content on LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser6": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Content Topic Generator",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Content Topic Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Topic Generator": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser7": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Content Creator",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Content Creator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser3": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Hashtag Generator / SEO",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Hashtag Generator / SEO",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Creator": {
+      "main": [
+        [
+          {
+            "node": "Hashtag Generator / SEO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hashtag Generator / SEO": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "999a9154-61e3-4385-a342-3fedba984c02",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3797c2fbe1a7aaaff77f4baef9a9c644860b0e13de8378327ee9db0d5f8c4594"
+  },
+  "id": "AgKgQKTSQoGmGOs0",
+  "tags": [
+    {
+      "updatedAt": "2026-06-15T20:01:43.779Z",
+      "createdAt": "2026-06-15T20:01:43.779Z",
+      "id": "JfpkeQeHiUsotkZL",
+      "name": "latest"
+    },
+    {
+      "updatedAt": "2026-06-15T20:01:27.147Z",
+      "createdAt": "2026-06-15T20:01:27.147Z",
+      "id": "lfT6g6xlfMWJTy9f",
+      "name": "V2"
+    }
+  ]
+}

@@ -1,0 +1,451 @@
+{
+  "name": "LinkedIn-Content-Creator",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        16
+      ],
+      "id": "ca82f865-e2e1-4eec-8a35-5738dd16873d",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1_e_AcLY9OrkPsY6izVvXT1BT2fjURElAFWoD7MDNhF8",
+          "mode": "list",
+          "cachedResultName": "LinkedIn Posts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_e_AcLY9OrkPsY6izVvXT1BT2fjURElAFWoD7MDNhF8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_e_AcLY9OrkPsY6izVvXT1BT2fjURElAFWoD7MDNhF8/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status",
+              "lookupValue": "To Do"
+            }
+          ]
+        },
+        "options": {
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -112,
+        16
+      ],
+      "id": "a6e760b3-0328-46b3-a59e-3ed352248667",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "czYQrSpaMKPj0dtH",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Topic: {{ $json.Topic }}\n\nSearch this topic, read 2-3 articles, and write the LinkedIn post.",
+        "options": {
+          "systemMessage": "You are a LinkedIn content strategist. Write inspiring, professional posts based ONLY on articles you fetch using your tools.\n\nTOOLS:\n- Firecrawl-Search: Search the web. Returns titles, links, snippets.\n- Jina-Read-Content: Fetch full text from a URL.\n\nWORKFLOW:\n1. Call Firecrawl-Search with the topic.\n2. Extract 2-3 URLs from the results.\n3. Call Jina-Read-Content on each URL.\n4. Write the LinkedIn post using ONLY facts from those articles.\n\nPOST RULES:\n- 150-250 words\n- Start with a bold hook (stat, question, or statement)\n- Use short paragraphs or bullets\n- 2-4 emojis placed naturally\n- End with a question or call-to-action\n- 3-5 hashtags at the bottom\n- NEVER invent facts, stats, or quotes\n- NEVER include raw URLs in the body\n- NO generic fluff like \"In today's world...\"\n\nOUTPUT:\n-Wrap your post exactly like this:\n===POST===\n[post text here]\n===END===\n-Return ONLY the final post text. No thinking, no explanations, no \"Here is the post:\", no JSON, no code blocks. Just the post."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        168,
+        16
+      ],
+      "id": "91a75bcb-8e95-46f1-aac2-c502b0d84543",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "nemotron-3-super",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        112,
+        240
+      ],
+      "id": "91f34fdb-4d5c-4968-b8c8-15712129f4ee",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "XmTTkUhhd9okrx05",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "MapSearch",
+        "operation": "search",
+        "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Query', ``, 'string') }}",
+        "requestOptions": {}
+      },
+      "type": "@mendable/n8n-nodes-firecrawl.firecrawlTool",
+      "typeVersion": 1,
+      "position": [
+        240,
+        240
+      ],
+      "id": "5c62f29a-31f4-463b-854d-a0b1dd9a2ad0",
+      "name": "Firecrawl-Search",
+      "credentials": {
+        "firecrawlApi": {
+          "id": "DOntCuRxf5LMWETE",
+          "name": "Firecrawl account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Read URL content provided by SerpAPI in Jina AI",
+        "url": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('URL', ``, 'string') }}",
+        "options": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.jinaAiTool",
+      "typeVersion": 1,
+      "position": [
+        368,
+        240
+      ],
+      "id": "f8d72d4c-c81a-41a3-a6af-eb8f8d0db2b9",
+      "name": "Jina-Read-Content",
+      "credentials": {
+        "jinaAiApi": {
+          "id": "tannjP3wkjcfRD33",
+          "name": "Jina AI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "35b359f6-b5cf-4cd2-9414-7780eb374dab",
+              "name": "linkedin_post",
+              "value": "={{ $json.output.split(\"===POST===\")[3].split(\"===END===\")[0].trim() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        576,
+        16
+      ],
+      "id": "76d24311-8fc9-4991-9572-e5112eeaf930",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/rest/posts",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "linkedInOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Restli-Protocol-Version",
+              "value": "2.0.0"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "LinkedIn-Version",
+              "value": "202605"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ \nJSON.stringify({\n  \"author\": \"urn:li:person:\" + $json.sub,\n  \"commentary\": $('Edit Fields').item.json.linkedin_post,\n  \"visibility\": \"PUBLIC\",\n  \"distribution\": {\n    \"feedDistribution\": \"MAIN_FEED\",\n    \"targetEntities\": [],\n    \"thirdPartyDistributionChannels\": []\n  },\n  \"lifecycleState\": \"PUBLISHED\"\n}) \n}}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1024,
+        16
+      ],
+      "id": "cedd121b-a74e-4742-8adc-9cf435277a76",
+      "name": "Post Content on LinkedIn",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "BKdDzBtdHHqXlkO5",
+          "name": "LinkedIn-Developers-API-Account"
+        },
+        "linkedInOAuth2Api": {
+          "id": "o9c0yGvCopFYElHU",
+          "name": "LinkedIn account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.linkedin.com/v2/userinfo",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "linkedInOAuth2Api",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        800,
+        16
+      ],
+      "id": "74dd05d4-82dd-481f-b253-1f2acd0d7e06",
+      "name": "LinkedIn Person-ID Extraction",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "BKdDzBtdHHqXlkO5",
+          "name": "LinkedIn-Developers-API-Account"
+        },
+        "linkedInOAuth2Api": {
+          "id": "o9c0yGvCopFYElHU",
+          "name": "LinkedIn account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1_e_AcLY9OrkPsY6izVvXT1BT2fjURElAFWoD7MDNhF8",
+          "mode": "list",
+          "cachedResultName": "LinkedIn Posts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_e_AcLY9OrkPsY6izVvXT1BT2fjURElAFWoD7MDNhF8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_e_AcLY9OrkPsY6izVvXT1BT2fjURElAFWoD7MDNhF8/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Topic": "={{ $('Get row(s) in sheet').item.json.Topic }}",
+            "Status": "Completed",
+            "Content": "={{ $('Edit Fields').item.json.linkedin_post }}"
+          },
+          "matchingColumns": [
+            "Topic"
+          ],
+          "schema": [
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Content",
+              "displayName": "Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1248,
+        16
+      ],
+      "id": "2dcd8398-3dc0-4f82-ab5f-49a8c6ff1be0",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "czYQrSpaMKPj0dtH",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "AI Agent": [
+      {
+        "json": {
+          "output": "We have fetched two articles: Adobe Firefly page and Canva AI image generator page.\n\nWe need to write a LinkedIn post using ONLY facts from those articles. Must be 150-250 words, start with a bold hook, short paragraphs or bullets, 2-4 emojis, end with question or CTA, 3-5 hashtags. No raw URLs in body, no invented facts.\n\nWe need to extract facts from the articles.\n\nFrom Adobe Firefly page: \n- Free AI image generator online.\n- Input simple text prompts, AI does the rest.\n- Generates four unique results per prompt.\n- Can use reference images or sketches.\n- Powered by generative AI models trained on licensed images from Adobe Stock and public domain content.\n- Commercially safe.\n- Features: Generate AI Image, Image from Image, Sketch to Image, Portrait, Headshot.\n- Partner models: GPT Image 2, Gemini 3 (Nano Banana), ElevenLabs, Kling AI, Runway.\n- Free to use with Adobe account, monthly generative credits.\n- Tips: start with simple prompt, upload reference images, create in stages.\n- High-quality images with exceptional detail, creative freedom, custom results with precise controls.\n- Remix content from community.\n\nFrom Canva page:\n- Online AI Image Generator.\n- Dream it up, then add to design.\n- Magic Media™ and Create an image, powered by Dream Lab.\n- Generate stunning AI images inspired by a reference image.\n- Wide range of art styles: photos, drawing, 3D, neon, concept art.\n- Text to Image: choose style options like Watercolor, Filmic, Neon, Color Pencil, Retrowave.\n- Transform ideas into images: start with text prompt, generate image, customize with styles, ratios, photo editing tools.\n- Text to Graphic: generate graphics, icons, stickers, illustrations.\n- Text to Video: describe video, generate with filters, transitions.\n- Safety measures: automated reviews of input prompts for inappropriate content, can report unsafe content.\n- For content creators, entrepreneurs, budding artists.\n- Photo editing features: generate images from text, various art styles, Magic Edit, Magic Eraser, enhance images, photo effects & filters, add text to photo, one-click background remover, automatically translate design, millions of free images, access anywhere, autosave, easy sharing, cloud storage, real-time collaboration, content planner (Pro).\n- How to make AI-generated images: start design, click Elements > AI image generator or homepage search > Canva AI > Create an image, describe image, choose style, click Create your image, finish with effects, filters, download/share.\n- How it works: ML model scans millions of images and text, spots trends, predicts image from text, creates new images.\n- Benefits: bring ideas to life instantly, no creative blocks, use as eye-catching web content, quirky social media posts, winning design proposals.\n- Can use images for personal or commercial projects following AI Product Terms and Terms of Use.\n- Not exclusive rights, need to ensure suitability for commercial use, permission may be needed for depictions of art, photographs, trademarks, logos.\n- Canva doesn't guarantee AI-generated images cleared for use if they look like someone else's work.\n- Be a Good Human: don't create harmful content, infringe third-party rights, defame anyone, inform viewers content contains AI-generated images.\n- Ownership: between you and Canva, you own designs generated with AI image generators subject to Terms, give Canva right to host output.\n\nWe need to craft a LinkedIn post that is inspiring, professional, based only on these facts.\n\nHook: maybe a stat or question. We don't have explicit stats like \"X% of marketers use AI image generation\" but we can use a statement like \"Transform text into stunning visuals in seconds\" - that's from both.\n\nLet's aim for ~180 words.\n\nStructure:\n- Hook bold statement.\n- Brief intro about AI image generation empowering creators.\n- Bullet points or short paragraphs highlighting key benefits/features from both tools (without naming them? We can mention Adobe Firefly and Canva as examples? The post should be about AI image generation generally, but we can mention specific platforms as examples as long as we stick to facts. We can say \"Platforms like Adobe Firefly and Canva's AI image generator allow you to...\" and then list facts.\n\nBut we must not invent facts; we can say they offer free access, generate multiple options, support various styles, allow commercial use with proper terms, etc.\n\nWe need to ensure we don't add any info not in the articles.\n\nLet's draft:\n\nHook: \"What if you could turn a simple text prompt into a professional-quality image in seconds? 🚀\"\n\nThen short paragraphs:\n\n\"AI image generation is transforming how we create visuals. With tools like Adobe Firefly and Canva's AI image generator, you can:\n- Generate four unique image options from a single text prompt instantly.\n- Choose from diverse art styles—from photorealistic to watercolor, 3D, neon, and more.\n- Use reference images or sketches to guide the AI toward your exact vision.\n- Edit and refine results with built-in tools like generative fill, magic edit, or background removal.\n- Create content safely, with automated prompt reviews and clear terms for personal or commercial use.\n- Access millions of free assets, collaborate in real-time, and download designs ready for social media, presentations, or branding.\n\nThese platforms are trained on licensed and public domain data, ensuring commercially safe output when guidelines are followed. Whether you're a content creator, entrepreneur, or artist, AI image generation removes creative blocks and brings ideas to life faster than ever.\n\nReady to visualize your next big idea? Try it today and see what you can create. 💡\"\n\nThen question/CTA: \"What's the first image you'd generate with AI? Share your thoughts below!\"\n\nHashtags: #AIImageGeneration #AIArt #CreativeTech #DesignInnovation #FutureOfWork\n\nCheck word count: Let's count roughly.\n\nDraft:\n\n\"What if you could turn a simple text prompt into a professional-quality image in seconds? 🚀\n\nAI image generation is transforming how we create visuals. With tools like Adobe Firefly and Canva's AI image generator, you can:\n- Generate four unique image options from a single text prompt instantly.\n- Choose from diverse art styles—from photorealistic to watercolor, 3D, neon, and more.\n- Use reference images or sketches to guide the AI toward your exact vision.\n- Edit and refine results with built-in tools like generative fill, magic edit, or background removal.\n- Create content safely, with automated prompt reviews and clear terms for personal or commercial use.\n- Access millions of free assets, collaborate in real-time, and download designs ready for social media, presentations, or branding.\n\nThese platforms are trained on licensed and public domain data, ensuring commercially safe output when guidelines are followed. Whether you're a content creator, entrepreneur, or artist, AI image generation removes creative blocks and brings ideas to life faster than ever.\n\nReady to visualize your next big idea? Try it today and see what you can create. 💡\n\nWhat's the first image you'd generate with AI? Share your thoughts below!\n\n#AIImageGeneration #AIArt #CreativeTech #DesignInnovation #FutureOfWork\"\n\nNow count words: Let's count manually.\n\nFirst line: What(1) if2 you3 could4 turn5 a6 simple7 text8 prompt9 into10 a11 professional-quality12 image13 in14 seconds?15 🚀16\n\nSecond line: AI1 image2 generation3 is4 transforming5 how6 we7 create8 visuals.9\n\nThird line: With10 tools11 like12 Adobe13 Firefly14 and15 Canva's16 AI17 image18 generator,19 you20 can:21\n\nBullet points: each bullet starts with dash, we count words after dash.\n\n- Generate1 four2 unique3 image4 options5 from6 a7 single8 text9 prompt10 instantly11.\n- Choose2 from3 diverse4 art5 styles—from6 photorealistic7 to8 watercolor,9 3D,10 neon,11 and12 more13.\n- Use4 reference5 images6 or7 sketches8 to9 guide10 the11 AI12 toward13 your14 exact15 vision16.\n- Edit7 and8 refine9 results10 with11 built-in12 tools13 like14 generative15 fill,16 magic17 edit,18 or19 background20 removal21.\n- Create10 content11 safely,12 with13 automated14 prompt15 reviews16 and17 clear18 terms19 for20 personal21 or22 commercial23 use24.\n- Access11 millions12 of13 free14 assets,15 collaborate16 in17 real-time,18 and19 download20 designs21 ready22 for23 social24 media,25 presentations,26 or27 branding28.\n\nNext sentence: These1 platforms2 are3 trained4 on5 licensed6 and7 public8 domain9 data,10 ensuring11 commercially12 safe13 output14 when15 guidelines16 are17 followed18.\n\nWhether1 you're2 a3 content4 creator,5 entrepreneur,6 or7 artist,8 AI9 image10 generation11 removes12 creative13 blocks14 and15 brings16 ideas17 to18 life19 faster20 than21 ever22.\n\nReady1 to2 visualize3 your4 next5 big6 idea?7 Try8 it9 today10 and11 see12 what13 you14 can15 create16. 💡17\n\nWhat's1 the2 first3 image4 you'd5 generate6 with7 AI?8 Share9 your10 thoughts11 below!12\n\nHashtags: #AIImageGeneration1 #AIArt2 #CreativeTech3 #DesignInnovation4 #FutureOfWork5\n\nNow sum: Let's add line by line.\n\nLine1: 16 words\nLine2: 9 words (total 25)\nLine3: 21 words (total 46)\nBullet1: 11 words (57)\nBullet2: 13 words (70)\nBullet3: 16 words (86)\nBullet4: 21 words (107)\nBullet5: 24 words (131)\nBullet6: 28 words (159)\nLine after bullets: 18 words (177)\nNext line: 22 words (199)\nNext line: 17 words (216)\nNext line: 12 words (228)\nHashtags line: 5 words (233)\n\nTotal ~233 words, within 150-250.\n\nWe have emojis: 🚀 and 💡 (two emojis). Good.\n\nWe started with bold hook (question). Ended with question.\n\nWe used short paragraphs and bullets.\n\nWe did not include raw URLs.\n\nWe only used facts from the articles: we mentioned generating four unique options (Adobe), diverse art styles (both), reference images/sketches (Adobe), edit/refine tools (Adobe generative fill, Canva magic edit, background removal), safe creation with automated prompts and terms (both), access to millions of free assets (Canva), real-time collaboration (Canva), download for social media etc (both). Platforms trained on licensed and public domain data (Adobe). Commercially safe output when guidelines followed (Adobe). Removes creative blocks (Canva). Bringing ideas to life faster (both). All facts are present.\n\nWe did not invent any stats or quotes.\n\nThus post is ready.\n\nNow output as per format: wrap exactly like:\n\n===POST===\n[post text here]\n===END===\n\nWe need to output only the final post text, no extra.\n\nLet's produce.===POST===\nWhat if you could turn a simple text prompt into a professional-quality image in seconds? 🚀\n\nAI image generation is transforming how we create visuals. With tools like Adobe Firefly and Canva's AI image generator, you can:\n- Generate four unique image options from a single text prompt instantly.\n- Choose from diverse art styles—from photorealistic to watercolor, 3D, neon, and more.\n- Use reference images or sketches to guide the AI toward your exact vision.\n- Edit and refine results with built-in tools like generative fill, magic edit, or background removal.\n- Create content safely, with automated prompt reviews and clear terms for personal or commercial use.\n- Access millions of free assets, collaborate in real-time, and download designs ready for social media, presentations, or branding.\n\nThese platforms are trained on licensed and public domain data, ensuring commercially safe output when guidelines are followed. Whether you're a content creator, entrepreneur, or artist, AI image generation removes creative blocks and brings ideas to life faster than ever.\n\nReady to visualize your next big idea? Try it today and see what you can create. 💡\n\nWhat's the first image you'd generate with AI? Share your thoughts below!\n\n#AIImageGeneration #AIArt #CreativeTech #DesignInnovation #FutureOfWork\n===END===\n===POST===\nWhat if you could turn a simple text prompt into a professional-quality image in seconds? 🚀\n\nAI image generation is transforming how we create visuals. With tools like Adobe Firefly and Canva's AI image generator, you can:\n- Generate four unique image options from a single text prompt instantly.\n- Choose from diverse art styles—from photorealistic to watercolor, 3D, neon, and more.\n- Use reference images or sketches to guide the AI toward your exact vision.\n- Edit and refine results with built-in tools like generative fill, magic edit, or background removal.\n- Create content safely, with automated prompt reviews and clear terms for personal or commercial use.\n- Access millions of free assets, collaborate in real-time, and download designs ready for social media, presentations, or branding.\n\nThese platforms are trained on licensed and public domain data, ensuring commercially safe output when guidelines are followed. Whether you're a content creator, entrepreneur, or artist, AI image generation removes creative blocks and brings ideas to life faster than ever.\n\nReady to visualize your next big idea? Try it today and see what you can create. 💡\n\nWhat's the first image you'd generate with AI? Share your thoughts below!\n\n#AIImageGeneration #AIArt #CreativeTech #DesignInnovation #FutureOfWork\n===END==="
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Firecrawl-Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Jina-Read-Content": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn Person-ID Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn Person-ID Extraction": {
+      "main": [
+        [
+          {
+            "node": "Post Content on LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Content on LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "71870bd1-e115-4194-b05d-7d80156b7226",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3797c2fbe1a7aaaff77f4baef9a9c644860b0e13de8378327ee9db0d5f8c4594"
+  },
+  "id": "fklOb0bNOtrGwS6pY40aL",
+  "tags": []
+}
