@@ -1,6 +1,7 @@
-# 🤖 LinkedIn Content Creator — AI-Powered Automation
+ 
+# 🤖 LinkedIn Content Creator V2 — AI-Powered B2B Lead Generation
 
-> **Automate your LinkedIn presence with AI.** This n8n workflow researches topics, generates professional posts using local LLMs, and publishes them directly to LinkedIn — all managed from a simple Google Sheet.
+> Automate your LinkedIn presence with Agentic AI. This n8n workflow generates hyper-targeted, B2B lead-generating content using local LLMs, and publishes directly to LinkedIn — all managed from a Google Sheet.
 
 ---
 
@@ -8,24 +9,77 @@
 
 | Feature | Description |
 |---------|-------------|
-| 📊 **Topic Queue** | Manage content ideas in a Google Sheet with status tracking |
-| 🔍 **AI Research** | Automatically searches the web for latest articles and insights |
-| 📝 **Smart Writing** | Generates inspiring, professional LinkedIn posts with emojis & hashtags |
-| 🚀 **Auto-Publish** | Posts directly to your LinkedIn profile via API |
-| ✅ **Status Tracking** | Marks completed posts and stores generated content |
+| 📊 **Topic Queue** | Manage content ideas in Google Sheets with status tracking |
+| 🧠 **AI Topic Research** | Generates B2B topics targeting CTOs, VPs of Engineering, and Tech Founders |
+| 📝 **Smart Writing Engine** | Creates high-converting LinkedIn posts with structured output parsing |
+| 🏷️ **Auto-SEO Hashtags** | Generates category-mapped hashtags (Broad / Niche / Audience) |
+| 🚀 **Auto-Publish** | Posts directly to LinkedIn via the latest REST API |
+| ✅ **Status Tracking** | Auto-marks completed posts and stores generated content |
 
 ---
 
-### Workflow Nodes
+## 🆕 V2 vs V1
 
-| Node | Purpose |
-|------|---------|
-| **Google Sheets** | Read topic queue & update status |
-| **AI Agent** | Orchestrates research & writing |
-| **Ollama Chat Model** | Local LLM for content generation |
-| **Firecrawl Search** | AI-native web search |
-| **Jina AI Reader** | Extracts full article content from URLs |
-| **LinkedIn API** | Publish posts to personal profile |
+| Capability | V1 | V2 |
+|-----------|----|----|
+| **Content Strategy** | Generic topics | Pain-point-driven B2B topics with lead-gen hooks |
+| **AI Pipeline** | Single AI Agent | 3-stage: Topic Generator → Content Creator → Hashtag/SEO |
+| **Output Control** | Free-form text | Structured JSON parsers for consistent results |
+| **LLM Models** | Single model | Multi-model: `qwen3-coder:480b` + `minimax-m3` |
+| **LinkedIn API** | Native node (prone to deprecation) | Raw HTTP with `LinkedIn-Version: 202605` |
+| **Person ID** | Manual / broken | Auto-extracts `sub` from `/v2/userinfo` |
+| **Post Body** | Simple text | Title + Content + Categorized Hashtags |
+| **Data Sources** | Firecrawl + Jina AI web search | Fully prompt-driven, zero API costs |
+| **Target Audience** | General users | CTOs, VPs of Engineering, Tech Founders, CXOs |
+| **Commercial Intent** | None | Every post ends with an inbound conversion hook |
+
+### V2 Special Features
+
+1. **Three-Stage AI Pipeline**
+   - **Topic Generator** (Agent + `qwen3-coder:480b`): Generates Title, Rationale, Hook
+   - **Content Creator** (LLM Chain + `qwen3-coder:480b`): Writes the post with strict copywriting rules
+   - **Hashtag Generator** (Agent + `minimax-m3`): Categorizes hashtags into Broad, Niche, Audience
+
+2. **Structured Output Parsers** — Every AI node enforces JSON schemas, eliminating malformed outputs
+
+3. **Future-Proof LinkedIn Integration** — Uses `/rest/posts` endpoint with protocol version headers; auto-resolves Person URN
+
+4. **Zero External API Costs** — All AI runs locally via Ollama; no Firecrawl or Jina AI needed
+
+---
+
+## 🏗️ Architecture
+
+```
+[Manual Trigger]
+    │
+    ▼
+[Content Topic Generator] ──► [Ollama qwen3-coder:480b] ──► [Structured Output Parser]
+    │
+    ▼
+[Append Row in Sheet] ──► writes Title, Rationale, Hook, Status="To Do"
+    │
+    ▼
+[Get Row(s) in Sheet] ──► filters Status="To Do", returnFirstMatch=true
+    │
+    ▼
+[Content Creator] ──► [Ollama qwen3-coder:480b] ──► [Structured Output Parser]
+    │
+    ▼
+[Hashtag Generator / SEO] ──► [Ollama minimax-m3] ──► [Structured Output Parser]
+    │
+    ▼
+[Edit Fields] ──► composes: post title + content + hashtags
+    │
+    ▼
+[LinkedIn Person-ID Extraction] ──► GET /v2/userinfo → extracts `sub`
+    │
+    ▼
+[Post Content on LinkedIn] ──► POST /rest/posts with URN + content
+    │
+    ▼
+[Update Row in Sheet] ──► Status="Completed", writes Content
+```
 
 ---
 
@@ -33,87 +87,69 @@
 
 ### Prerequisites
 
-- [n8n](https://n8n.io/) (self-hosted or cloud)
-- [Ollama](https://ollama.com/) with a chat model (e.g., `nemotron-3-super`, `llama3`, `mistral`)
-- [Firecrawl](https://firecrawl.dev/) API key
-- [Jina AI](https://jina.ai/) API key (free)
-- [LinkedIn Developer App](https://developer.linkedin.com/) with `w_member_social` scope
+- [n8n](https://n8n.io/) (self-hosted recommended)
+- [Ollama](https://ollama.com/) with models pulled:
+  ```bash
+  ollama pull qwen3-coder:480b
+  ollama pull minimax-m3
+  ```
+- [LinkedIn Developer App](https://developer.linkedin.com/) with **Share on LinkedIn** + **Sign In with LinkedIn using OpenID Connect** approved
 - Google Cloud project with Sheets API enabled
 
-### 1. Import the Workflow
+### 1. Import
 
-1. Download `LinkedIn-Content-Creator.json`
+1. Download `LinkedIn-Content-Creator-V2.json`
 2. In n8n: **Workflow** → **Import from File**
-3. Select the downloaded JSON
 
 ### 2. Configure Credentials
 
-| Credential | Where to Get |
-|------------|-------------|
+| Credential | Source |
+|------------|--------|
 | `Google Sheets OAuth2` | [Google Cloud Console](https://console.cloud.google.com/) |
-| `Ollama API` | Local Ollama instance (`http://localhost:11434`) |
-| `Firecrawl API` | [Firecrawl Dashboard](https://firecrawl.dev/) |
-| `Jina AI API` | [Jina AI](https://jina.ai/) (free, no card) |
+| `Ollama API` | Local instance (`http://localhost:11434`) |
 | `LinkedIn OAuth2` | [LinkedIn Developers](https://developer.linkedin.com/) |
 
 ### 3. Set Up Google Sheet
 
-Create a sheet with these columns:
+Create a sheet named **"LinkedIn Posts"** with tab **"V2"** and columns:
 
-| Topic | Status | Content |
-|-------|--------|---------|
-| AI Image Generation Trends | To Do | *(empty)* |
-| Remote Work Best Practices | To Do | *(empty)* |
+| Title | Rationale | Hook | Status | Content |
+|-------|-----------|------|--------|---------|
 
-### 4. Configure the Workflow
+> **Note:** The workflow auto-sets `Status="To Do"` when appending new topics. No manual entry needed.
 
-- **Google Sheets node**: Select your sheet and tab
-- **AI Agent**: Adjust system prompt for your tone/voice
-- **LinkedIn node**: Ensure `w_member_social` product is approved
-
-### 5. Activate & Run
+### 4. Run
 
 1. Toggle workflow to **Active**
-2. Click **"Execute Workflow"** or set a schedule trigger
-3. Watch your LinkedIn auto-populate with AI-generated content! 🎉
+2. Click **"Execute Workflow"**
+3. The pipeline auto-generates, publishes, and marks rows as **"Completed"**
 
 ---
 
 ## 🎨 Customization
 
-### Adjust Post Style
+### Adjust Voice & Niche
 
-Edit the **AI Agent System Prompt** to match your voice:
+Edit the **Content Topic Generator** prompt to change target audience and strategic pillars.
 
-- Formal vs. casual tone
-- More/fewer emojis
-- Longer or shorter posts
-- Industry-specific hashtags
+Edit the **Content Creator** prompt to adjust tone, word count, and forbidden phrases.
 
-### Change the LLM Model
+### Swap LLM Models
 
-In the **Ollama Chat Model** node, switch to any Ollama model:
-
-| Model | Best For |
-|-------|---------|
-| `llama3` | General purpose |
-| `mistral` | Fast & efficient |
-| `nemotron-3-super` | High quality (default) |
-
-### Add Image Generation
-
-Extend the workflow with:
-- DALL-E / Midjourney / Stable Diffusion API
-- Auto-attach generated images to LinkedIn posts
+| Node | Default | Alternatives |
+|------|---------|-------------|
+| Topic Generator | `qwen3-coder:480b` | `llama3`, `mistral`, `deepseek-coder` |
+| Content Creator | `qwen3-coder:480b` | `llama3.1`, `nemotron-3-super` |
+| Hashtag Generator | `minimax-m3` | `phi3`, `gemma2` |
 
 ---
 
 ## 🔒 Security & Best Practices
 
-- **Never commit credentials** — use n8n's built-in credential store
-- **Rate limiting** — LinkedIn allows ~100 posts/day per user
-- **Content review** — Consider adding a manual approval step before publishing
-- **OAuth scopes** — Only request `openid profile w_member_social` for personal posting
+- Store credentials in n8n's built-in vault — never commit them
+- LinkedIn rate limit: ~100 posts/day
+- All AI processing is local via Ollama — zero data leaves your network
+- Consider adding a **Wait** node for manual approval before publishing
 
 ---
 
@@ -121,49 +157,31 @@ Extend the workflow with:
 
 | Issue | Solution |
 |-------|----------|
-| `invalid_scope_error` | Ensure LinkedIn app has "Share on LinkedIn" product approved |
-| `NONEXISTENT_VERSION` | Use HTTP Request node instead of native LinkedIn node (v2.4.8 bug) |
-| `urn:li:person` error | Use `urn:li:member:ID` format with numeric ID from `/v2/me` |
-| AI outputs reasoning | Tighten system prompt; add `===POST===` delimiter extraction |
-| Empty search results | Check Firecrawl API key and rate limits |
+| `invalid_scope_error` | Approve "Share on LinkedIn" + "Sign In with LinkedIn" products |
+| `Requested version is not active` | Update `LinkedIn-Version` header to latest YYYYMMDD |
+| AI outputs reasoning/thinking | Structured Output Parsers enforce JSON; tighten prompts if needed |
+| Ollama connection refused | Run `ollama serve` and verify models are pulled |
+| Hashtags not categorized | Check `minimax-m3` is installed and Parser 3 schema is valid |
 
 ---
 
 ## 📄 License
 
-MIT License
-
-Copyright (c) 2026 [Your Name]
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-## 🙌 Credits
+## 🔄 V1 → V2 Migration
 
-Built with:
-- [n8n](https://n8n.io/) — Workflow automation
-- [Ollama](https://ollama.com/) — Local LLMs
-- [Firecrawl](https://firecrawl.dev/) — AI web search
-- [Jina AI](https://jina.ai/) — Article extraction
-- [LinkedIn API](https://developer.linkedin.com/) — Social publishing
+1. Backup your V1 workflow
+2. Update Google Sheet: add `Rationale` and `Hook` columns; rename `Topic` to `Title`
+3. Pull new Ollama models (see Prerequisites)
+4. Reconfigure LinkedIn credentials for HTTP Request node
+5. Remove Firecrawl/Jina AI credentials — no longer needed
+6. Test with "Execute Workflow" before activating
 
 ---
 
-> **Star ⭐ this repo if it helps you automate your content!**
+Built with [n8n](https://n8n.io/), [Ollama](https://ollama.com/), and [LinkedIn REST API](https://developer.linkedin.com/).
+
+> **Star ⭐ this repo if it powers your B2B content engine!**
